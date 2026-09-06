@@ -1,0 +1,22 @@
+{
+  "name": "Mappa Civici Corrieri",
+  "short_name": "Civici",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#002b80",
+  "theme_color": "#002b80",
+  "icons": [
+    {
+      "src": "icon-512.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

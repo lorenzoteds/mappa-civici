@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#003399"/>
+      <stop offset="100%" stop-color="#001f66"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Sfondo Blu Scuro con angoli arrotondati -->
+  <rect width="512" height="512" rx="115" fill="url(#bgGrad)"/>
+
+  <!-- Segnale Geografico Pin Giallo -->
+  <g filter="url(#shadow)">
+    <!-- Forma del Pin Giallo -->
+    <path d="M256 60 C 160 60, 85 135, 85 230 C 85 340, 230 435, 245 445 C 251 450, 261 450, 267 445 C 282 435, 427 340, 427 230 C 427 135, 352 60, 256 60 Z" 
+          fill="#FFCC00" stroke="#FFE066" stroke-width="6"/>
+
+    <!-- Cerchio Interno Blu -->
+    <circle cx="256" cy="225" r="95" fill="#002b80"/>
+
+    <!-- Pacco Consegne 3D (Giallo / Oro) -->
+    <path d="M256 165 L320 200 L256 235 L192 200 Z" fill="#FFE066"/>
+    <path d="M192 205 L252 238 L252 290 L192 255 Z" fill="#E6B800"/>
+    <path d="M320 205 L260 238 L260 290 L320 255 Z" fill="#FFD633"/>
+    
+    <!-- Nastri del pacco -->
+    <path d="M256 165 L256 235" stroke="#002b80" stroke-width="4"/>
+    <path d="M218 185 L288 223" stroke="#002b80" stroke-width="4"/>
+  </g>
+</svg>
