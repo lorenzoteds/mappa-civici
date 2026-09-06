@@ -305,32 +305,32 @@
       attribution: '&copy; OpenStreetMap'
     });
 
-    // 2. Foto Satellitare Esri (con maxNativeZoom per evitare riquadri grigi)
+    // 2. Solo Satellite Esri
     const satelliteBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxNativeZoom: 18,
       maxZoom: 20,
       attribution: 'Tiles &copy; Esri'
     });
 
-    // 3. Etichette trasparenti (Vie, confini e punti di riferimento)
-    const labelsOverlay = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-      maxNativeZoom: 18,
+    // 3. Etichette e Nomi Vie trasparenti ad alto contrasto (CartoDB)
+    const hybridLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
       maxZoom: 20
     });
 
-    // Gruppo Ibrido: Foto aerea sotto + Etichette sopra
-    const hybridLayer = L.layerGroup([satelliteBase, labelsOverlay]);
+    // Gruppo IBRIDO: Satellite + Nomi vie e numeri sovrapposti
+    const hybridLayer = L.layerGroup([satelliteBase, hybridLabels]);
 
-    // Inizializzazione mappa
+    // Inizializzazione Mappa
     const map = L.map('map', {
       center: [46.1689, 9.8715],
       zoom: 13,
       layers: [hybridLayer]
     });
 
-    // Selettore in alto a destra
+    // Menu di selezione in alto a destra
     const baseMaps = {
-      "🛰️ IbridoTony (Foto+Vie)": hybridLayer,
+      "🛰️ IbridoTony (Satellite+Vie)": hybridLayer,
       "🗺️ Stradale": streetLayer,
       "📷 Satellite": satelliteBase
     };
