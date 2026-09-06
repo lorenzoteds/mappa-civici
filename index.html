@@ -343,7 +343,7 @@ const textLabelsOverlay = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastert
 const hybridGroup = L.layerGroup([satelliteBase, roadLinesOverlay, textLabelsOverlay]);
 
 // Imposta l'ibrido come vista iniziale predefinita
-hybridGroup.addTo(map);
+satelliteBase.addTo(map);
 
 // 5. Selettore livelli in alto a destra
 const baseMaps = {
