@@ -299,42 +299,60 @@
     });
 
     // --- 3. INIZIALIZZAZIONE MAPPA LEAFLET ---
-    // 1. Stradale standard OpenStreetMap
-    const streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap'
-    });
+   // 1. Inizializza prima l'oggetto mappa
+const map = L.map('map', {
+  center: [46.1689, 9.8715],
+  zoom: 13
+});
 
-    // 2. Solo Satellite Esri
-    const satelliteBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxNativeZoom: 18,
-      maxZoom: 20,
-      attribution: 'Tiles &copy; Esri'
-    });
+// 2. Crea un piano grafico prioritario dedicato alle etichette e linee stradali
+// Lo zIndex 650 garantisce che restino SEMPRE sopra le tessere satellitari (ferme a zIndex 200)
+map.createPane('hybridOverlayPane');
+map.getPane('hybridOverlayPane').style.zIndex = '650';
+map.getPane('hybridOverlayPane').style.pointerEvents = 'none'; // Permette di cliccare la mappa attraverso le scritte
 
-    // 3. Etichette e Nomi Vie trasparenti ad alto contrasto (CartoDB)
-    const hybridLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 20
-    });
+// 3. Definizione dei singoli livelli
+// Livello Stradale standard
+const streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap'
+});
 
-    // Gruppo IBRIDO: Satellite + Nomi vie e numeri sovrapposti
-    const hybridLayer = L.layerGroup([satelliteBase, hybridLabels]);
+// Livello Foto Satellitare
+const satelliteBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  maxNativeZoom: 18,
+  maxZoom: 20,
+  attribution: 'Tiles &copy; Esri'
+});
 
-    // Inizializzazione Mappa
-    const map = L.map('map', {
-      center: [46.1689, 9.8715],
-      zoom: 13,
-      layers: [hybridLayer]
-    });
+// Livello Tracciato Strade Esri (assegnato al pane sopraelevato)
+const roadLinesOverlay = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+  maxNativeZoom: 18,
+  maxZoom: 20,
+  pane: 'hybridOverlayPane'
+});
 
-    // Menu di selezione in alto a destra
-    const baseMaps = {
-      "🛰️ IbridoTony (Satellite+Vie)": hybridLayer,
-      "🗺️ Stradale": streetLayer,
-      "📷 Satellite": satelliteBase
-    };
-    L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+// Livello Nomi Vie ed Etichette CartoDB (assegnato al pane sopraelevato)
+const textLabelsOverlay = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
+  subdomains: 'abcd',
+  maxZoom: 20,
+  pane: 'hybridOverlayPane'
+});
+
+// 4. Creazione del gruppo Ibrido
+const hybridGroup = L.layerGroup([satelliteBase, roadLinesOverlay, textLabelsOverlay]);
+
+// Imposta l'ibrido come vista iniziale predefinita
+hybridGroup.addTo(map);
+
+// 5. Selettore livelli in alto a destra
+const baseMaps = {
+  "🛰️ Ibrido (Foto + Strade + Vie)": hybridGroup,
+  "🗺️ Stradale OpenStreetMap": streetLayer,
+  "📷 Solo Satellite": satelliteBase
+};
+
+L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
     setTimeout(() => { map.invalidateSize(); }, 300);
 
