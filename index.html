@@ -21,6 +21,11 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+  <!-- Marker Cluster -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -45,7 +50,6 @@
       position: relative;
     }
 
-    /* Top Bar */
     header {
       background: #1e3a8a;
       color: white;
@@ -66,6 +70,18 @@
     .app-title {
       font-size: 15px;
       font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .author-tag {
+      font-size: 10px;
+      font-weight: 500;
+      opacity: 0.7;
+      background: rgba(255,255,255,0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
     }
 
     .top-actions {
@@ -84,7 +100,9 @@
       align-items: center;
       justify-content: center;
       gap: 4px;
+      transition: opacity 0.15s;
     }
+    .btn:active { opacity: 0.85; }
     .btn-mode {
       background: #059669;
       color: white;
@@ -144,6 +162,103 @@
       z-index: 1;
     }
 
+    /* Banner modalità modifica */
+    #edit-banner {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 900;
+      background: #dc2626;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 12px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    #edit-banner.visible {
+      display: flex;
+    }
+    #edit-banner button {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.4);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Loading overlay */
+    #loading-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(248,250,252,0.7);
+      z-index: 800;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #loading-overlay.visible {
+      display: flex;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #cbd5e1;
+      border-top-color: #1e3a8a;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text {
+      font-size: 13px;
+      color: #475569;
+      font-weight: 600;
+    }
+
+    /* Toast */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 4000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+      width: min(90%, 340px);
+    }
+    .toast {
+      background: #1e293b;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.25s, transform 0.25s;
+      text-align: center;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .toast.success { background: #059669; }
+    .toast.error { background: #dc2626; }
+    .toast.info { background: #2563eb; }
+
     /* Mirino Modifica */
     .precision-crosshair {
       width: 24px;
@@ -180,7 +295,21 @@
       box-shadow: 0 0 8px rgba(37, 99, 235, 0.8);
     }
 
-    /* Pulsante Modale */
+    /* Cluster custom */
+    .marker-cluster-small,
+    .marker-cluster-medium,
+    .marker-cluster-large {
+      background-color: rgba(30, 58, 138, 0.55);
+    }
+    .marker-cluster-small div,
+    .marker-cluster-medium div,
+    .marker-cluster-large div {
+      background-color: rgba(30, 58, 138, 0.85);
+      color: white;
+      font-weight: 700;
+    }
+
+    /* Modal */
     #modal {
       display: none;
       position: fixed;
@@ -233,6 +362,7 @@
       gap: 8px;
       justify-content: flex-end;
       margin-top: 14px;
+      flex-wrap: wrap;
     }
 
     #search-results-dropdown {
@@ -249,6 +379,37 @@
       z-index: 2500;
       margin-top: 4px;
     }
+
+    /* GPS indicator */
+    #gps-indicator {
+      position: absolute;
+      bottom: 18px;
+      right: 12px;
+      z-index: 900;
+      background: rgba(15,23,42,0.8);
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      pointer-events: none;
+    }
+    #gps-indicator.active {
+      color: #4ade80;
+    }
+    #gps-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #64748b;
+    }
+    #gps-indicator.active #gps-dot {
+      background: #4ade80;
+      box-shadow: 0 0 6px #4ade80;
+    }
   </style>
 </head>
 <body>
@@ -257,9 +418,9 @@
   <header>
     <div class="top-row">
       <div class="app-title">
-  <span>📦 Mappa Civici</span>
-  <span class="author-tag" title="Sviluppato da Lorenzo Tedesco">by LT</span>
-</div>
+        <span>📦 Mappa Civici</span>
+        <span class="author-tag" title="Sviluppato da Lorenzo Tedesco">by LT</span>
+      </div>
       <div class="top-actions">
         <button id="mode-toggle-btn" class="btn btn-mode" onclick="toggleEditMode()">🔒 Sola Lettura</button>
         <button id="btn-add-main" class="btn btn-add" style="display:none;" onclick="triggerAddAtCenter()">➕ Aggiungi</button>
@@ -279,7 +440,25 @@
     </div>
   </header>
 
+  <!-- Banner modalità modifica -->
+  <div id="edit-banner">
+    <span>✏️ Modalità modifica attiva — tocca la mappa per aggiungere</span>
+    <button onclick="toggleEditMode()">Esci</button>
+  </div>
+
   <div id="map"></div>
+
+  <!-- Loading -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Caricamento punti…</div>
+  </div>
+
+  <!-- GPS indicator -->
+  <div id="gps-indicator">
+    <div id="gps-dot"></div>
+    <span id="gps-text">GPS…</span>
+  </div>
 </div>
 
 <!-- Finestra Modale -->
@@ -316,6 +495,9 @@
     </div>
   </div>
 </div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
 
 <script>
   // 1. SUPABASE
@@ -367,10 +549,10 @@
   const map = L.map('map', {
     center: [46.1689, 9.8715],
     zoom: 13,
-    zoomControl: true
+    zoomControl: true,
+    preferCanvas: true
   });
 
-  // Livello speciale per le etichette
   map.createPane('hybridOverlayPane');
   map.getPane('hybridOverlayPane').style.zIndex = '650';
   map.getPane('hybridOverlayPane').style.pointerEvents = 'none';
@@ -407,11 +589,38 @@
   };
   L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
-  // LayerGroup leggero e reattivo per i marker
-  const markersLayer = L.layerGroup().addTo(map);
+  // Marker Cluster Group
+  const markersLayer = L.markerClusterGroup({
+    maxClusterRadius: 50,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: true,
+    disableClusteringAtZoom: 18
+  });
+  map.addLayer(markersLayer);
 
-  // 4. CARICAMENTO DATI
+  // 4. TOAST
+  function showToast(message, type = 'info', duration = 2800) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, duration);
+  }
+
+  // 5. LOADING
+  function setLoading(visible) {
+    document.getElementById('loading-overlay').classList.toggle('visible', visible);
+  }
+
+  // 6. CARICAMENTO DATI
   async function fetchDeliveryPoints() {
+    setLoading(true);
     try {
       const { data, error } = await supabaseClient
         .from('delivery_points')
@@ -425,10 +634,13 @@
       }
     } catch (err) {
       console.warn("Errore caricamento punti:", err);
+      showToast("Errore nel caricamento dei punti", "error");
+    } finally {
+      setLoading(false);
     }
   }
 
-  // 5. FILTRI E POPUP NAVIGATORI
+  // 7. FILTRI E POPUP
   function applyFilters() {
     const selectedZone = document.getElementById('zone-filter').value;
     const query = document.getElementById('search-input').value.toLowerCase().trim();
@@ -454,6 +666,24 @@
     return filtered;
   }
 
+  function haversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3;
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  function formatDistance(meters) {
+    if (meters < 1000) return Math.round(meters) + ' m';
+    return (meters / 1000).toFixed(1) + ' km';
+  }
+
   function renderMarkers(points) {
     markersLayer.clearLayers();
 
@@ -474,7 +704,10 @@
         fillOpacity: 0.95
       });
 
-      marker.bindPopup(buildPopupHTML(pt, lat, lng, zoneStr));
+      marker.bindPopup(() => buildPopupHTML(pt, lat, lng, zoneStr), {
+        maxWidth: 280,
+        className: 'civico-popup'
+      });
       markersLayer.addLayer(marker);
     });
   }
@@ -483,33 +716,72 @@
     const label = encodeURIComponent(pt.address || 'Civico');
     const displayZone = zoneStr ? (String(zoneStr).toUpperCase().includes('ZONA') ? String(zoneStr).toUpperCase() : `ZONA ${zoneStr}`) : 'ZONA N/D';
 
-    // Link Navigatore: Google Maps & Apple Maps
     const gMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
     const appleUrl = `maps://maps.apple.com/?daddr=${lat},${lng}&q=${label}`;
+    const wazeUrl = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+
+    let distanceHtml = '';
+    if (userLatLng) {
+      const dist = haversineDistance(userLatLng[0], userLatLng[1], lat, lng);
+      distanceHtml = `<div style="font-size:11px; color:#64748b; margin-bottom:6px;">📍 ${formatDistance(dist)} da te</div>`;
+    }
 
     return `
-      <div style="font-size:13px; line-height:1.4; min-width:180px;">
+      <div style="font-size:13px; line-height:1.4; min-width:200px;">
         <div style="margin-bottom:4px;">
           <span style="background:${getZoneColor(zoneStr)}; color:white; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px;">${displayZone}</span>
         </div>
         <div style="font-weight:700; color:#1e293b; font-size:14px; margin-bottom:2px;">${pt.address || 'Senza Indirizzo'}</div>
-        <div style="color:#475569; font-size:12px; margin-bottom:8px;">${pt.notes || '<i>Nessuna nota</i>'}</div>
+        <div style="color:#475569; font-size:12px; margin-bottom:4px;">${pt.notes || '<i>Nessuna nota</i>'}</div>
+        ${distanceHtml}
         
         <div style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Apri con:</div>
-        <div style="display:flex; gap:6px;">
-          <a href="${gMapsUrl}" target="_blank" style="flex:1; text-align:center; background:#2563eb; color:white; padding:6px 0; border-radius:4px; text-decoration:none; font-size:12px; font-weight:600;">Google Maps</a>
-          <a href="${appleUrl}" style="flex:1; text-align:center; background:#000000; color:white; padding:6px 0; border-radius:4px; text-decoration:none; font-size:12px; font-weight:600;">Apple Maps</a>
+        <div style="display:flex; gap:5px; flex-wrap:wrap;">
+          <a href="${gMapsUrl}" target="_blank" rel="noopener" style="flex:1; min-width:70px; text-align:center; background:#2563eb; color:white; padding:6px 0; border-radius:4px; text-decoration:none; font-size:11px; font-weight:600;">Google</a>
+          <a href="${appleUrl}" style="flex:1; min-width:70px; text-align:center; background:#000000; color:white; padding:6px 0; border-radius:4px; text-decoration:none; font-size:11px; font-weight:600;">Apple</a>
+          <a href="${wazeUrl}" target="_blank" rel="noopener" style="flex:1; min-width:70px; text-align:center; background:#33ccff; color:#003366; padding:6px 0; border-radius:4px; text-decoration:none; font-size:11px; font-weight:600;">Waze</a>
         </div>
 
-        ${isEditMode ? `
-          <div style="margin-top:8px; border-top:1px solid #e2e8f0; padding-top:6px; text-align:right;">
-            <button onclick="openEditModal(${pt.id})" style="background:none; border:none; color:#dc2626; font-size:12px; font-weight:700; cursor:pointer;">✏️ Modifica</button>
-          </div>` : ''}
+        <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
+          <button onclick="copyCoords(${lat}, ${lng})" style="flex:1; background:#f1f5f9; border:1px solid #e2e8f0; color:#334155; padding:5px 0; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;">📋 Copia coord.</button>
+          ${isEditMode ? `
+            <button onclick="openEditModal(${pt.id})" style="background:none; border:none; color:#dc2626; font-size:12px; font-weight:700; cursor:pointer; padding:4px 6px;">✏️ Modifica</button>
+          ` : ''}
+        </div>
       </div>
     `;
   }
 
-  // 6. RICERCA
+  window.copyCoords = function(lat, lng) {
+    const text = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("Coordinate copiate", "success", 1800);
+      }).catch(() => {
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
+  };
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      showToast("Coordinate copiate", "success", 1800);
+    } catch (e) {
+      showToast("Impossibile copiare", "error");
+    }
+    document.body.removeChild(ta);
+  }
+
+  // 8. RICERCA
   function handleLiveSearch() {
     const query = document.getElementById('search-input').value.toLowerCase().trim();
     const dropdown = document.getElementById('search-results-dropdown');
@@ -558,30 +830,35 @@
     map.setView([lat, lng], 18, { animate: true });
 
     markersLayer.eachLayer(layer => {
-      const pos = layer.getLatLng();
-      if (pos.lat === lat && pos.lng === lng) {
-        layer.openPopup();
+      if (layer.getLatLng) {
+        const pos = layer.getLatLng();
+        if (Math.abs(pos.lat - lat) < 0.00001 && Math.abs(pos.lng - lng) < 0.00001) {
+          layer.openPopup();
+        }
       }
     });
   }
 
-  // 7. MODIFICA
+  // 9. MODIFICA
   function toggleEditMode() {
     isEditMode = !isEditMode;
     const toggleBtn = document.getElementById('mode-toggle-btn');
     const addBtn = document.getElementById('btn-add-main');
     const mapContainer = document.getElementById('map');
+    const banner = document.getElementById('edit-banner');
 
     if (isEditMode) {
       toggleBtn.innerHTML = '✏️ Modifica ON';
       toggleBtn.style.background = '#dc2626';
       addBtn.style.display = 'inline-flex';
       mapContainer.style.cursor = 'crosshair';
+      banner.classList.add('visible');
     } else {
       toggleBtn.innerHTML = '🔒 Sola Lettura';
       toggleBtn.style.background = '#059669';
       addBtn.style.display = 'none';
       mapContainer.style.cursor = '';
+      banner.classList.remove('visible');
       closeModal();
     }
     applyFilters();
@@ -672,7 +949,7 @@
     }
   }
 
-  // 8. SALVATAGGIO & ELIMINAZIONE
+  // 10. SALVATAGGIO & ELIMINAZIONE
   async function savePoint() {
     const id = document.getElementById('edit-id').value;
     const lat = parseFloat(document.getElementById('input-lat').value);
@@ -682,7 +959,7 @@
     const notes = document.getElementById('input-notes').value.trim();
 
     if (!address) {
-      alert("Inserisci l'indirizzo.");
+      showToast("Inserisci l'indirizzo", "error");
       return;
     }
 
@@ -698,32 +975,36 @@
       if (id) {
         const { error } = await supabaseClient.from('delivery_points').update(payload).eq('id', id);
         if (error) throw error;
+        showToast("Civico aggiornato", "success");
       } else {
         const { error } = await supabaseClient.from('delivery_points').insert([payload]);
         if (error) throw error;
+        showToast("Civico aggiunto", "success");
       }
       closeModal();
       await fetchDeliveryPoints();
     } catch (err) {
-      alert("Errore durante il salvataggio: " + err.message);
+      showToast("Errore salvataggio: " + (err.message || "sconosciuto"), "error");
     }
   }
 
   async function deletePoint() {
     const id = document.getElementById('edit-id').value;
-    if (!id || !confirm("Vuoi davvero eliminare questo civico?")) return;
+    if (!id) return;
+    if (!confirm("Vuoi davvero eliminare questo civico?")) return;
 
     try {
       const { error } = await supabaseClient.from('delivery_points').delete().eq('id', id);
       if (error) throw error;
+      showToast("Civico eliminato", "success");
       closeModal();
       await fetchDeliveryPoints();
     } catch (err) {
-      alert("Errore durante l'eliminazione: " + err.message);
+      showToast("Errore eliminazione: " + (err.message || "sconosciuto"), "error");
     }
   }
 
-  // 9. GEOLOCALIZZAZIONE (Leggera in background)
+  // 11. GEOLOCALIZZAZIONE
   if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
       (pos) => {
@@ -735,15 +1016,40 @@
         } else {
           userMarker.setLatLng(userLatLng);
         }
+        const gpsEl = document.getElementById('gps-indicator');
+        const gpsText = document.getElementById('gps-text');
+        gpsEl.classList.add('active');
+        const acc = Math.round(pos.coords.accuracy);
+        gpsText.textContent = `GPS ±${acc}m`;
       },
-      () => {},
-      { enableHighAccuracy: true, maximumAge: 30000 }
+      () => {
+        document.getElementById('gps-text').textContent = 'GPS off';
+        document.getElementById('gps-indicator').classList.remove('active');
+      },
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
     );
+  } else {
+    document.getElementById('gps-text').textContent = 'GPS n/d';
   }
 
-  // 10. AVVIO
+  // Chiudi dropdown ricerca al click fuori
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('search-results-dropdown');
+    const searchInput = document.getElementById('search-input');
+    if (!dropdown.contains(e.target) && e.target !== searchInput) {
+      dropdown.style.display = 'none';
+    }
+  });
+
+  // 12. AVVIO
   fetchDeliveryPoints();
+
+  // Service Worker registration
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
 </script>
+
   <!-- Micro Credit Lorenzo Tedesco -->
 <div style="position:fixed; bottom:8px; left:10px; z-index:998; background:rgba(15,23,42,0.75); backdrop-filter:blur(4px); color:#cbd5e1; font-size:10px; font-weight:600; padding:3px 8px; border-radius:6px; pointer-events:none; border:1px solid rgba(255,255,255,0.1);">
   ⚡ LT • Lorenzo Tedesco
