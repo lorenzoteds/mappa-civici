@@ -4,699 +4,830 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Mappa Civici Corrieri</title>
-  <!-- IDEA DELLA MAPPA CIVICI CREATA DA LORENZO TEDESCO  -->
-  <!-- MANIFEST -->
+
+  <!-- PWA & Favicon -->
   <link rel="manifest" href="manifest.json" />
-<link rel="apple-touch-icon" href="icon-512.png" />
-<meta name="theme-color" content="#1e3a8a" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#1e3a8a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="icon" type="image/svg+xml" href="icon-512.svg" />
+  <link rel="apple-touch-icon" href="icon-512.svg" />
 
-<!-- Collegamenti per Favicon SVG -->
-<link rel="icon" type="image/svg+xml" href="icon-512.svg" />
-<link rel="apple-touch-icon" href="icon-512.svg" />
-
-  <!-- Leaflet CSS & JS -->
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
-  <!-- Supabase JS Client -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <!-- Leaflet MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-  /* Mirino a X di precisione per il posizionamento */
-.precision-crosshair {
-  width: 24px;
-  height: 24px;
-  position: relative;
-  cursor: grab;
-}
-.precision-crosshair::before,
-.precision-crosshair::after {
-  content: '';
-  position: absolute;
-  background: #dc2626;
-  box-shadow: 0 0 3px rgba(0,0,0,0.8);
-}
-/* Linea orizzontale */
-.precision-crosshair::before {
-  top: 11px;
-  left: 0;
-  width: 24px;
-  height: 2px;
-}
-/* Linea verticale */
-.precision-crosshair::after {
-  top: 0;
-  left: 11px;
-  width: 2px;
-  height: 24px;
-}
-  .user-location-pin {
-    background-color: #2563eb;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    border: 3px solid white;
-    box-shadow: 0 0 8px rgba(37, 99, 235, 0.8);
-   }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background: #e2e8f0; }
-    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #f8fafc;
+    }
+
     #app-container {
       display: flex;
       flex-direction: column;
-      width: 100vw;
-      height: 100vh;
-      height: 100dvh;
+      height: 100%;
+      width: 100%;
+      position: relative;
     }
 
-    #top-bar {
-      padding: 10px 12px;
+    /* Top Bar */
+    header {
       background: #1e3a8a;
       color: white;
+      padding: 8px 12px;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
       z-index: 1000;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      flex-shrink: 0;
     }
-    .bar-row { display: flex; gap: 8px; align-items: center; }
-    #search-input, #zone-filter {
-      padding: 9px 12px;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
-      font-size: 14px;
-      outline: none;
+
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    #search-input { flex: 1; }
-    #zone-filter { flex: 1; background: white; color: #1e293b; font-weight: 600; }
+
+    .app-title {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 6px;
+    }
+
     .btn {
-      background: #2563eb;
-      color: white;
-      border: none;
-      padding: 9px 12px;
+      padding: 6px 12px;
       border-radius: 6px;
-      font-weight: bold;
-      font-size: 13px;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
-      white-space: nowrap;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 4px;
+      transition: opacity 0.15s ease, transform 0.1s ease;
     }
-    .btn:active { opacity: 0.85; }
+    .btn:active {
+      transform: scale(0.96);
+    }
+    .btn-mode {
+      background: #059669;
+      color: white;
+    }
+    .btn-add {
+      background: #f59e0b;
+      color: white;
+    }
 
+    .bar-row {
+      display: flex;
+      gap: 8px;
+      position: relative;
+    }
+
+    select, input[type="text"] {
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      font-size: 13px;
+      background: white;
+      color: #1e293b;
+      outline: none;
+    }
+
+    #zone-filter {
+      width: 110px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    #search-input {
+      flex: 1;
+      width: 100%;
+    }
+
+    /* Tasto rapido di cancellazione ricerca */
+    #clear-search-btn {
+      display: none;
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 4px 8px;
+      z-index: 10;
+    }
+
+    /* Mappa */
     #map {
-      flex: 1 1 auto;
+      flex: 1;
       width: 100%;
       height: 100%;
-      background: #cbd5e1;
       z-index: 1;
     }
 
+    /* Mirino di precisione a X */
+    .precision-crosshair {
+      width: 24px;
+      height: 24px;
+      position: relative;
+      cursor: grab;
+    }
+    .precision-crosshair::before,
+    .precision-crosshair::after {
+      content: '';
+      position: absolute;
+      background: #dc2626;
+      box-shadow: 0 0 3px rgba(0,0,0,0.8);
+    }
+    .precision-crosshair::before {
+      top: 11px;
+      left: 0;
+      width: 24px;
+      height: 2px;
+    }
+    .precision-crosshair::after {
+      top: 0;
+      left: 11px;
+      width: 2px;
+      height: 24px;
+    }
+
+    /* Indicatore posizione GPS blu */
+    .user-pos-marker {
+      width: 14px;
+      height: 14px;
+      background-color: #2563eb;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 8px rgba(37, 99, 235, 0.8);
+    }
+
+    /* Tasto Galleggiante Centra GPS */
+    .btn-locate-fab {
+      position: fixed;
+      bottom: 24px;
+      right: 18px;
+      width: 48px;
+      height: 48px;
+      background-color: #ffffff;
+      color: #1e3a8a;
+      border-radius: 50%;
+      border: 2px solid #cbd5e1;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      cursor: pointer;
+      z-index: 999;
+      transition: transform 0.1s ease, background-color 0.2s ease;
+    }
+    .btn-locate-fab:active {
+      transform: scale(0.92);
+      background-color: #f1f5f9;
+    }
+
+    /* Finestra Modale */
     #modal {
       display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 3000;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .modal-content {
+      background: white;
+      max-width: 420px;
+      margin: 40px auto 0 auto;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+    }
+    .form-group textarea {
+      resize: vertical;
+      min-height: 55px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 14px;
+    }
+
+    /* Suggestion Dropdown */
+    #search-results-dropdown {
+      display: none;
       position: absolute;
-      bottom: 0;
+      top: 100%;
       left: 0;
       right: 0;
       background: white;
-      padding: 16px;
-      border-radius: 16px 16px 0 0;
-      box-shadow: 0 -4px 16px rgba(0,0,0,0.25);
-      z-index: 2000;
-    }
-    .form-group { margin-bottom: 10px; }
-    .form-group label {
-      display: block;
-      font-size: 12px;
-      font-weight: 700;
-      color: #475569;
-      margin-bottom: 4px;
-      text-transform: uppercase;
-    }
-    #modal input, #modal textarea, #modal select {
-      width: 100%;
-      padding: 9px 10px;
-      border: 1px solid #cbd5e1;
       border-radius: 6px;
-      font-size: 14px;
-    }
-    .btn-group { display: flex; gap: 8px; margin-top: 12px; }
-    .btn-save { background: #16a34a; flex: 1; }
-    .btn-cancel { background: #64748b; }
-    .btn-delete { background: #dc2626; }
-    
-    .popup-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: bold;
-      margin-bottom: 4px;
-      color: white;
-    }
-    .btn-nav {
-      background: #2563eb;
-      color: white !important;
-      padding: 6px 10px;
-      border-radius: 4px;
-      text-decoration: none;
-      font-size: 12px;
-      font-weight: bold;
-      display: inline-block;
-      text-align: center;
-      flex: 1;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 2500;
+      margin-top: 4px;
     }
   </style>
 </head>
 <body>
 
-  <div id="app-container">
-    <div id="top-bar">
-      <!-- Riga 1: Zone + Toggle Modifica + Aggiungi + Guida -->
-      <div class="bar-row">
-        <select id="zone-filter" onchange="applyFilters()">
-          <option value="ALL">📍 Tutte le 22 Zone</option>
-        </select>
-        
-        <button id="mode-toggle-btn" class="btn" style="background:#059669;" onclick="toggleEditMode()">
-          🔒 Sola Lettura
-        </button>
-
-        <button id="btn-add-main" class="btn" style="background:#16a34a; display:none;" onclick="locateAndAdd()">
-          + Aggiungi
-        </button>
-        
-        <button class="btn" style="background:#475569; padding: 9px 10px;" onclick="openHelpModal()">❓</button>
+<div id="app-container">
+  <!-- Barra Superiore -->
+  <header>
+    <div class="top-row">
+      <div class="app-title">📦 Mappa Civici</div>
+      <div class="top-actions">
+        <button id="mode-toggle-btn" class="btn btn-mode" onclick="toggleEditMode()">🔒 Sola Lettura</button>
+        <button id="btn-add-main" class="btn btn-add" style="display:none;" onclick="triggerAddAtCenter()">➕ Aggiungi</button>
       </div>
-
-      <!-- Riga 2: Ricerca istantanea con tendina risultati -->
-      <div class="bar-row" style="position: relative;">
-  <input type="text" id="search-input" style="padding-right: 32px;" placeholder="🔍 Cerca via, civico, note..." oninput="handleLiveSearch()" onkeydown="handleSearchKey(event)" autocomplete="off" />
-  
-  <!-- Tasto rapido di cancellazione "✖" -->
-  <button id="clear-search-btn" onclick="clearSearch()" style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; font-size:16px; font-weight:bold; cursor:pointer; padding:4px 8px; z-index:10;">✕</button>
-
-  <div id="search-results-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border-radius:6px; box-shadow:0 6px 16px rgba(0,0,0,0.25); max-height:220px; overflow-y:auto; z-index:2500; margin-top:4px;"></div>
-</div>
     </div>
+    
+    <div class="bar-row">
+      <select id="zone-filter" onchange="applyFilters()">
+        <option value="ALL">Tutte le Zone</option>
+        <!-- Generato via JS -->
+      </select>
+      
+      <div style="flex:1; position:relative;">
+        <input type="text" id="search-input" style="padding-right: 32px;" placeholder="🔍 Cerca via, civico, note..." oninput="handleLiveSearch()" autocomplete="off" />
+        <button id="clear-search-btn" onclick="clearSearch()" title="Cancella">✕</button>
+        <div id="search-results-dropdown"></div>
+      </div>
+    </div>
+  </header>
 
-    <!-- Mappa -->
-    <div id="map"></div>
-  </div>
+  <!-- Mappa Leaflet -->
+  <div id="map"></div>
 
-  <!-- Form Modale (Inserimento / Modifica) -->
-  <div id="modal">
-    <h3 id="modal-title" style="margin-bottom: 10px; color: #1e293b;">Salva Posizione Civico</h3>
+  <!-- Pulsante Galleggiante Centra Posizione GPS -->
+  <button class="btn-locate-fab" onclick="centerOnUserLocation()" title="Centra sulla mia posizione">🎯</button>
+</div>
+
+<!-- Finestra Modale per Aggiunta e Modifica Civici -->
+<div id="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div id="modal-title" class="modal-title">Dettagli Civico</div>
+      <button onclick="closeModal()" style="background:none; border:none; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    
     <input type="hidden" id="edit-id" />
     <input type="hidden" id="input-lat" />
     <input type="hidden" id="input-lng" />
 
     <div class="form-group">
-      <label for="input-zone">Zona di Consegna</label>
+      <label>Zona / Settore</label>
       <select id="input-zone"></select>
     </div>
 
     <div class="form-group">
-      <label for="input-address">Indirizzo e Civico</label>
-      <input type="text" id="input-address" placeholder="Es. Via Stelvio 45/A..." />
+      <label>Indirizzo e Civico</label>
+      <input type="text" id="input-address" placeholder="Es. Via Roma 12" />
     </div>
 
     <div class="form-group">
-      <label for="input-notes">Note di consegna per il collega</label>
-      <textarea id="input-notes" rows="2" placeholder="Es. Citofono Rossi scala B, cancello sul retro"></textarea>
+      <label>Note di Consegna</label>
+      <textarea id="input-notes" placeholder="Es. Citofono Bianchi, cancello sul retro, cortile interno"></textarea>
     </div>
 
-    <div class="btn-group">
-      <button class="btn btn-save" onclick="savePoint()">Salva</button>
-      <button id="btn-delete" class="btn btn-delete" style="display:none;" onclick="deleteCurrentPoint()">Elimina</button>
-      <button class="btn btn-cancel" onclick="closeModal()">Annulla</button>
-    </div>
-  </div>
-
-  <!-- Popup Guida Istruzioni -->
-  <div id="help-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:3000; align-items:center; justify-content:center; padding:16px;">
-    <div style="background:white; border-radius:12px; max-width:480px; width:100%; max-height:85vh; overflow-y:auto; padding:20px; box-shadow:0 10px 25px rgba(0,0,0,0.3);">
-      <h2 style="color:#1e3a8a; margin-bottom:12px; font-size:18px; display:flex; align-items:center; gap:8px;">
-        📦 Guida Rapida Corrieri
-      </h2>
-      <div style="font-size:14px; color:#334155; line-height:1.5; display:flex; flex-direction:column; gap:12px;">
-        <div>
-          <strong>1. 🔒 Sola Lettura (Default):</strong><br/>
-          I tocchi involontari sono bloccati durante la guida. Tocca un marcatore per vedere le note o avviare il navigatore.
-        </div>
-        <div>
-          <strong>2. ✏️ Modalità Modifica:</strong><br/>
-          Tocca <b>🔒 Sola Lettura</b> per sbloccare l'app. Comparirà <b>+ Aggiungi</b> e potrai toccare la mappa per inserire o modificare i punti.
-        </div>
-        <div>
-          <strong>3. 🔍 Ricerca Rapida:</strong><br/>
-          Digita una via nella barra di ricerca: comparirà subito l'elenco dei civici corrispondenti. Toccane uno per fare lo zoom immediato.
-        </div>
-        <div>
-          <strong>4. 🚗 Navigazione:</strong><br/>
-          Tocca un civico e premi <b>🚗 Naviga</b> per aprire direttamente Google Maps verso l'ingresso esatto.
-        </div>
-      </div>
-      <button onclick="closeHelpModal()" class="btn" style="background:#1e3a8a; width:100%; margin-top:18px; padding:10px; font-size:15px;">
-        Ho Capito 👍 Forza Tony
-      </button>
+    <div class="modal-buttons">
+      <button id="btn-delete" class="btn" style="background:#dc2626; color:white; display:none;" onclick="deletePoint()">🗑️ Elimina</button>
+      <button class="btn" style="background:#64748b; color:white;" onclick="closeModal()">Annulla</button>
+      <button class="btn" style="background:#2563eb; color:white;" onclick="savePoint()">💾 Salva</button>
     </div>
   </div>
+</div>
 
-  <script>
-    // --- 1. CREDENZIALI SUPABASE ---
-    const SUPABASE_URL = 'https://lheeuxozbzqkqunhrbwu.supabase.co';
-    const SUPABASE_ANON_KEY= 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoZWV1eG96Ynpxa3F1bmhyYnd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMTczMTYsImV4cCI6MjEwMzU5MzMxNn0.PLN4BSLnxPhv5lQFUzhijBgMCRYBu7fKp7wdJsHW9sE';
-    const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<!-- Leaflet JS & MarkerCluster JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
+<script>
+  // ==========================================
+  // 1. CONFIGURAZIONE SUPABASE
+  // ==========================================
+  const SUPABASE_URL = 'https://TUO-PROGETTO.supabase.co';
+  const SUPABASE_KEY = 'LA-TUA-ANON-KEY-PUBBLICA';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // --- 2. GESTIONE ZONE ---
-    const ZONES = Array.from({ length: 22 }, (_, i) => {
-      const num = String(i + 1).padStart(2, '0');
-      return { id: `Z${num}`, name: `Zona ${num}` };
-    });
+  // ==========================================
+  // 2. STATO APPLICAZIONE
+  // ==========================================
+  let allPoints = [];
+  let isEditMode = false;
+  let tempMarker = null;
+  let userLatLng = null;
+  let userMarker = null;
 
-    const ZONE_COLORS = [
-      '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', 
-      '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e',
-      '#e11d48', '#c026d3', '#7c3aed', '#2563eb', '#0284c7', '#059669',
-      '#65a30d', '#d97706', '#ea580c', '#dc2626'
-    ];
+  const ZONES = Array.from({ length: 22 }, (_, i) => `ZONA ${i + 1}`);
+  const ZONE_COLORS = [
+    '#e11d48', '#d97706', '#059669', '#2563eb', '#7c3aed',
+    '#db2777', '#0891b2', '#4f46e5', '#ca8a04', '#16a34a',
+    '#dc2626', '#ea580c', '#0284c7', '#9333ea', '#c026d3',
+    '#0d9488', '#475569', '#b91c1c', '#15803d', '#1d4ed8',
+    '#6d28d9', '#be123c'
+  ];
 
-    function getZoneColor(zoneId) {
-      const idx = ZONES.findIndex(z => z.id === zoneId);
-      return idx >= 0 ? ZONE_COLORS[idx % ZONE_COLORS.length] : '#1e40af';
-    }
+  function getZoneColor(zoneId) {
+    const idx = ZONES.indexOf(zoneId);
+    return idx !== -1 ? ZONE_COLORS[idx % ZONE_COLORS.length] : '#1e3a8a';
+  }
 
-    const filterSelect = document.getElementById('zone-filter');
-    const inputSelect = document.getElementById('input-zone');
-    ZONES.forEach(z => {
-      filterSelect.innerHTML += `<option value="${z.id}">${z.name}</option>`;
-      inputSelect.innerHTML += `<option value="${z.id}">${z.name}</option>`;
-    });
-
-    // --- 3. INIZIALIZZAZIONE MAPPA LEAFLET ---
-   // 1. Inizializza prima l'oggetto mappa
-const map = L.map('map', {
-  center: [46.1689, 9.8715],
-  zoom: 13
-});
-
-// 2. Crea un piano grafico prioritario dedicato alle etichette e linee stradali
-// Lo zIndex 650 garantisce che restino SEMPRE sopra le tessere satellitari (ferme a zIndex 200)
-map.createPane('hybridOverlayPane');
-map.getPane('hybridOverlayPane').style.zIndex = '650';
-map.getPane('hybridOverlayPane').style.pointerEvents = 'none'; // Permette di cliccare la mappa attraverso le scritte
-
-// 3. Definizione dei singoli livelli
-// Livello Stradale standard
-const streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '&copy; OpenStreetMap'
-});
-
-// Livello Foto Satellitare
-const satelliteBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-  maxNativeZoom: 18,
-  maxZoom: 20,
-  attribution: 'Tiles &copy; Esri'
-});
-
-// Livello Tracciato Strade Esri (assegnato al pane sopraelevato)
-const roadLinesOverlay = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
-  maxNativeZoom: 18,
-  maxZoom: 20,
-  pane: 'hybridOverlayPane'
-});
-
-// Livello Nomi Vie ed Etichette CartoDB (assegnato al pane sopraelevato)
-const textLabelsOverlay = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
-  subdomains: 'abcd',
-  maxZoom: 20,
-  pane: 'hybridOverlayPane'
-});
-
-// 4. Creazione del gruppo Ibrido
-const hybridGroup = L.layerGroup([satelliteBase, roadLinesOverlay, textLabelsOverlay]);
-
-// Imposta l'ibrido come vista iniziale predefinita
-satelliteBase.addTo(map);
-
-// 5. Selettore livelli in alto a destra
-const baseMaps = {
-  "🛰️ Ibrido (Foto + Strade + Vie)": hybridGroup,
-  "🗺️ Stradale OpenStreetMap": streetLayer,
-  "📷 Solo Satellite": satelliteBase
-};
-
-L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
-
-    setTimeout(() => { map.invalidateSize(); }, 300);
-
-    let allPoints = [];
-    let markersLayer = L.layerGroup().addTo(map);
-    let tempMarker = null;
-    let isEditMode = false;
-    let userLocationMarker = null;
-
-function trackUserLocation() {
-  if (!navigator.geolocation) return;
-
-  // 1. Centra subito la mappa sulla posizione attuale all'apertura
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const { latitude, longitude } = pos.coords;
-      map.setView([latitude, longitude], 15);
-      updateUserMarker(latitude, longitude);
-    },
-    (err) => {
-      console.warn("Accesso GPS non consentito o non disponibile:", err.message);
-    },
-    { enableHighAccuracy: true }
-  );
-
-  // 2. Aggiorna il pallino blu in tempo reale mentre ci si sposta col furgone
-  navigator.geolocation.watchPosition(
-    (pos) => {
-      const { latitude, longitude } = pos.coords;
-      updateUserMarker(latitude, longitude);
-    },
-    null,
-    { enableHighAccuracy: true }
-  );
-}
-
-function updateUserMarker(lat, lng) {
-  const icon = L.divIcon({
-    className: 'user-location-pin',
-    iconSize: [16, 16],
-    iconAnchor: [8, 8]
+  // Popola selettori zone
+  const zoneFilter = document.getElementById('zone-filter');
+  const inputZone = document.getElementById('input-zone');
+  ZONES.forEach(z => {
+    zoneFilter.innerHTML += `<option value="${z}">${z}</option>`;
+    inputZone.innerHTML += `<option value="${z}">${z}</option>`;
   });
 
-  if (userLocationMarker) {
-    userLocationMarker.setLatLng([lat, lng]);
-  } else {
-    userLocationMarker = L.marker([lat, lng], { icon: icon }).addTo(map);
-  }
-}
+  // ==========================================
+  // 3. INIZIALIZZAZIONE MAPPA E LIVELLI (IBRIDO)
+  // ==========================================
+  const map = L.map('map', {
+    center: [46.1689, 9.8715],
+    zoom: 13,
+    zoomControl: true
+  });
 
-// Avvia il rilevamento GPS
-trackUserLocation();
+  // Crea un pane dedicato ad alto z-index per forzare le scritte SEMPRE sopra le foto aeree
+  map.createPane('hybridOverlayPane');
+  map.getPane('hybridOverlayPane').style.zIndex = '650';
+  map.getPane('hybridOverlayPane').style.pointerEvents = 'none';
 
-    function createCustomPin(color) {
-      return L.divIcon({
-        className: 'custom-pin',
-        html: `<div style="background-color: ${color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7]
-      });
-    }
+  // Livello Stradale Standard
+  const streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+  });
 
-    // --- 4. GESTIONE MODALITÀ ---
-    function toggleEditMode() {
-  isEditMode = !isEditMode;
-  const toggleBtn = document.getElementById('mode-toggle-btn');
-  const addBtn = document.getElementById('btn-add-main');
-  const mapContainer = document.getElementById('map');
+  // Livello Foto Satellitare Esri
+  const satelliteBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxNativeZoom: 18,
+    maxZoom: 20,
+    attribution: 'Tiles &copy; Esri'
+  });
 
-  if (isEditMode) {
-    toggleBtn.innerHTML = '✏️ Modifica ON';
-    toggleBtn.style.background = '#dc2626';
-    addBtn.style.display = 'inline-flex';
-    // Cambia il cursore della mappa in mirino di precisione
-    mapContainer.style.cursor = 'crosshair';
-  } else {
-    toggleBtn.innerHTML = '🔒 Sola Lettura';
-    toggleBtn.style.background = '#059669';
-    addBtn.style.display = 'none';
-    // Ripristina il cursore standard
-    mapContainer.style.cursor = '';
-    closeModal();
-  }
-  applyFilters();
-}
+  // Livello Tracciato Strade Esri (sul pane sopraelevato)
+  const roadLinesOverlay = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+    maxNativeZoom: 18,
+    maxZoom: 20,
+    pane: 'hybridOverlayPane'
+  });
 
-    // --- 5. RECUPERO DATI & RENDERING ---
-    async function fetchPoints() {
-      try {
-        const { data, error } = await dbClient.from('delivery_points').select('*');
-        if (error) throw error;
-        allPoints = data || [];
-        applyFilters();
-      } catch (err) {
-        console.error('Errore Supabase:', err);
+  // Livello Nomi Vie ed Etichette CartoDB ad alto contrasto (sul pane sopraelevato)
+  const textLabelsOverlay = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
+    subdomains: 'abcd',
+    maxZoom: 20,
+    pane: 'hybridOverlayPane'
+  });
+
+  // Gruppo Ibrido Completo
+  const hybridGroup = L.layerGroup([satelliteBase, roadLinesOverlay, textLabelsOverlay]);
+
+  // Vista iniziale predefinita: Ibrido
+  hybridGroup.addTo(map);
+
+  // Selettore livelli in alto a destra
+  const baseMaps = {
+    "🛰️ Ibrido (Foto + Strade + Vie)": hybridGroup,
+    "🗺️ Stradale Classico": streetLayer,
+    "📷 Solo Satellite": satelliteBase
+  };
+  L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+
+  // ==========================================
+  // 4. CLUSTER DEI MARKER
+  // ==========================================
+  const markersClusterGroup = L.markerClusterGroup({
+    showCoverageOnHover: false,
+    maxClusterRadius: 40,
+    spiderfyOnMaxZoom: true
+  });
+  map.addLayer(markersClusterGroup);
+
+  // ==========================================
+  // 5. CARICAMENTO DATI E CACHE OFFLINE
+  // ==========================================
+  async function fetchDeliveryPoints() {
+    try {
+      const { data, error } = await supabaseClient
+        .from('delivery_points')
+        .select('*');
+
+      if (error) throw error;
+
+      if (data) {
+        allPoints = data;
+        localStorage.setItem('cached_delivery_points', JSON.stringify(data));
+        localStorage.setItem('cached_points_timestamp', new Date().toISOString());
       }
-    }
-
-    function renderMarkers(points) {
-      markersLayer.clearLayers();
-      points.forEach(pt => {
-        const color = getZoneColor(pt.zone_id);
-        const gmapsLink = `https://www.google.com/maps/dir/?api=1&destination=${pt.latitude},${pt.longitude}`;
-        
-        const editButtonHtml = isEditMode 
-          ? `<button onclick="openEditModal(${pt.id})" style="padding:5px 8px; border:1px solid #cbd5e1; border-radius:4px; cursor:pointer; background:#f8fafc; font-weight:bold;">✏️</button>` 
-          : '';
-
-        const popupContent = `
-          <div style="min-width: 170px;">
-            <span class="popup-badge" style="background:${color};">${pt.zone_id}</span>
-            <div style="font-weight:bold; font-size:14px;">${pt.address}</div>
-            <div style="color:#475569; font-size:12px; margin: 4px 0;">${pt.notes || '<i>Nessuna nota</i>'}</div>
-            <div style="display:flex; gap:6px; margin-top:8px;">
-              <a href="${gmapsLink}" target="_blank" class="btn-nav">🚗 Naviga</a>
-              ${editButtonHtml}
-            </div>
-          </div>
-        `;
-
-        L.marker([pt.latitude, pt.longitude], { icon: createCustomPin(color) })
-          .addTo(markersLayer)
-          .bindPopup(popupContent);
-      });
-    }
-
-    // --- 6. RICERCA ISTANTANEA E FILTRI ---
-    function applyFilters() {
-      const query = document.getElementById('search-input').value.toLowerCase().trim();
-      const selectedZone = document.getElementById('zone-filter').value;
-
-      const filtered = allPoints.filter(p => {
-        const matchZone = (selectedZone === 'ALL' || p.zone_id === selectedZone);
-        const matchText = (p.address && p.address.toLowerCase().includes(query)) || 
-                          (p.notes && p.notes.toLowerCase().includes(query));
-        return matchZone && matchText;
-      });
-
-      renderMarkers(filtered);
-      return filtered;
-    }
-
-    function handleLiveSearch() {
-  const query = document.getElementById('search-input').value.toLowerCase().trim();
-  const dropdown = document.getElementById('search-results-dropdown');
-  const clearBtn = document.getElementById('clear-search-btn');
-  
-  // Mostra la ✖ solo se c'è testo scritto
-  clearBtn.style.display = query ? 'block' : 'none';
-
-  const filtered = applyFilters();
-
-  if (!query) {
-    dropdown.style.display = 'none';
-    dropdown.innerHTML = '';
-    return;
-  }
-
-  if (filtered.length > 0) {
-    dropdown.innerHTML = filtered.slice(0, 8).map(pt => `
-      <div onclick="selectSearchResult(${pt.id})" style="padding:10px 12px; border-bottom:1px solid #f1f5f9; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <div style="font-weight:600; color:#1e293b; font-size:13px;">${pt.address}</div>
-          <div style="font-size:11px; color:#64748b;">${pt.notes || 'Nessuna nota'}</div>
-        </div>
-        <span style="background:${getZoneColor(pt.zone_id)}; color:white; font-size:10px; font-weight:bold; padding:2px 6px; border-radius:4px;">${pt.zone_id}</span>
-      </div>
-    `).join('');
-    dropdown.style.display = 'block';
-  } else {
-    dropdown.innerHTML = '<div style="padding:10px; font-size:12px; color:#94a3b8; text-align:center;">Nessun indirizzo trovato</div>';
-    dropdown.style.display = 'block';
-  }
-}
-
-// Funzione per svuotare il campo in un tocco
-function clearSearch() {
-  const searchInput = document.getElementById('search-input');
-  searchInput.value = '';
-  document.getElementById('clear-search-btn').style.display = 'none';
-  document.getElementById('search-results-dropdown').style.display = 'none';
-  applyFilters(); // Ripristina la visualizzazione di tutti i marker
-  searchInput.focus();
-}
-
-    function selectSearchResult(pointId) {
-      const pt = allPoints.find(p => p.id === pointId);
-      const dropdown = document.getElementById('search-results-dropdown');
-      dropdown.style.display = 'none';
-
-      if (pt) {
-        document.getElementById('search-input').value = pt.address;
-        map.setView([pt.latitude, pt.longitude], 18);
-        
-        markersLayer.eachLayer(layer => {
-          const latlng = layer.getLatLng();
-          if (Math.abs(latlng.lat - pt.latitude) < 0.00001 && Math.abs(latlng.lng - pt.longitude) < 0.00001) {
-            layer.openPopup();
-          }
-        });
-      }
-    }
-
-    function handleSearchKey(event) {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        const results = applyFilters();
-        if (results.length > 0) {
-          selectSearchResult(results[0].id);
-        }
-      }
-    }
-
-    // --- 7. AGGIUNTA / MODIFICA / ELIMINAZIONE ---
-    function locateAndAdd() {
-      if (!isEditMode) return;
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => openAddModal(pos.coords.latitude, pos.coords.longitude),
-          () => openAddModal(map.getCenter().lat, map.getCenter().lng),
-          { enableHighAccuracy: true }
-        );
+    } catch (err) {
+      console.warn("Rete assente o errore Supabase, recupero dati locali offline:", err);
+      const localData = localStorage.getItem('cached_delivery_points');
+      if (localData) {
+        allPoints = JSON.parse(localData);
+        const time = new Date(localStorage.getItem('cached_points_timestamp')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        alert(`⚠️ Modalità Offline: visualizzati ${allPoints.length} civici salvati sul telefono (ore ${time}).`);
       } else {
-        openAddModal(map.getCenter().lat, map.getCenter().lng);
+        alert("Attenzione: nessuna connessione a internet e nessun dato in memoria locale.");
       }
     }
-
-    map.on('click', (e) => {
-      document.getElementById('search-results-dropdown').style.display = 'none';
-      if (isEditMode) {
-        openAddModal(e.latlng.lat, e.latlng.lng);
-      }
-    });
-
-    function openAddModal(lat, lng) {
-  document.getElementById('modal-title').innerText = 'Nuovo Civico';
-  document.getElementById('edit-id').value = '';
-  document.getElementById('btn-delete').style.display = 'none';
-  document.getElementById('input-lat').value = lat;
-  document.getElementById('input-lng').value = lng;
-  document.getElementById('input-address').value = '';
-  document.getElementById('input-notes').value = '';
-  
-  const currentFilter = document.getElementById('zone-filter').value;
-  if (currentFilter !== 'ALL') {
-    document.getElementById('input-zone').value = currentFilter;
+    applyFilters();
   }
 
-  document.getElementById('modal').style.display = 'block';
+  // ==========================================
+  // 6. RENDERING E POPUP CON NAVIGATORI
+  // ==========================================
+  function applyFilters() {
+    const selectedZone = document.getElementById('zone-filter').value;
+    const query = document.getElementById('search-input').value.toLowerCase().trim();
 
-  // Icona mirino a croce centrata al millimetro (12px, 12px)
-  const crossIcon = L.divIcon({
-    className: 'precision-crosshair',
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
+    const filtered = allPoints.filter(pt => {
+      const matchZone = (selectedZone === 'ALL' || pt.zone_id === selectedZone);
+      const matchSearch = !query || 
+        (pt.address && pt.address.toLowerCase().includes(query)) ||
+        (pt.notes && pt.notes.toLowerCase().includes(query));
+      return matchZone && matchSearch;
+    });
+
+    renderMarkers(filtered);
+    return filtered;
+  }
+
+  function renderMarkers(points) {
+    markersClusterGroup.clearLayers();
+
+    points.forEach(pt => {
+      const color = getZoneColor(pt.zone_id);
+
+      const marker = L.circleMarker([pt.latitude, pt.longitude], {
+        radius: 8,
+        fillColor: color,
+        color: '#ffffff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.9
+      });
+
+      marker.bindPopup(buildPopupHTML(pt));
+      markersClusterGroup.addLayer(marker);
+    });
+  }
+
+  function buildPopupHTML(pt) {
+    const lat = pt.latitude;
+    const lng = pt.longitude;
+    const label = encodeURIComponent(pt.address || 'Civico');
+
+    const gMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    const appleUrl = `maps://maps.apple.com/?daddr=${lat},${lng}&q=${label}`;
+    const wazeUrl = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+
+    return `
+      <div style="font-size:13px; line-height:1.4; min-width:185px;">
+        <div style="font-weight:700; color:#1e293b; font-size:14px; margin-bottom:2px;">${pt.address}</div>
+        <div style="color:#475569; font-size:12px; margin-bottom:6px;">${pt.notes || '<i>Nessuna nota presente</i>'}</div>
+        <div style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Naviga con:</div>
+        <div style="display:flex; gap:4px;">
+          <a href="${gMapsUrl}" target="_blank" style="flex:1; text-align:center; background:#2563eb; color:white; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:11px; font-weight:600;">Google</a>
+          <a href="${appleUrl}" style="flex:1; text-align:center; background:#000000; color:white; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:11px; font-weight:600;">Apple</a>
+          <a href="${wazeUrl}" target="_blank" style="flex:1; text-align:center; background:#059669; color:white; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:11px; font-weight:600;">Waze</a>
+        </div>
+        ${isEditMode ? `
+          <div style="margin-top:8px; border-top:1px solid #e2e8f0; padding-top:6px; text-align:right;">
+            <button onclick="openEditModal(${pt.id})" style="background:none; border:none; color:#dc2626; font-size:12px; font-weight:700; cursor:pointer;">✏️ Modifica Civico</button>
+          </div>` : ''}
+      </div>
+    `;
+  }
+
+  // ==========================================
+  // 7. RICERCA LIVE E PULSANTE CANCELLA (✕)
+  // ==========================================
+  function handleLiveSearch() {
+    const query = document.getElementById('search-input').value.toLowerCase().trim();
+    const dropdown = document.getElementById('search-results-dropdown');
+    const clearBtn = document.getElementById('clear-search-btn');
+
+    clearBtn.style.display = query ? 'block' : 'none';
+
+    const filtered = applyFilters();
+
+    if (!query) {
+      dropdown.style.display = 'none';
+      dropdown.innerHTML = '';
+      return;
+    }
+
+    if (filtered.length > 0) {
+      dropdown.innerHTML = filtered.slice(0, 8).map(pt => `
+        <div onclick="selectSearchResult(${pt.id})" style="padding:10px 12px; border-bottom:1px solid #f1f5f9; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:600; color:#1e293b; font-size:13px;">${pt.address}</div>
+            <div style="font-size:11px; color:#64748b;">${pt.notes || 'Nessuna nota'}</div>
+          </div>
+          <span style="background:${getZoneColor(pt.zone_id)}; color:white; font-size:10px; font-weight:bold; padding:2px 6px; border-radius:4px;">${pt.zone_id}</span>
+        </div>
+      `).join('');
+      dropdown.style.display = 'block';
+    } else {
+      dropdown.innerHTML = '<div style="padding:10px; font-size:12px; color:#94a3b8; text-align:center;">Nessun indirizzo trovato</div>';
+      dropdown.style.display = 'block';
+    }
+  }
+
+  function clearSearch() {
+    const searchInput = document.getElementById('search-input');
+    searchInput.value = '';
+    document.getElementById('clear-search-btn').style.display = 'none';
+    document.getElementById('search-results-dropdown').style.display = 'none';
+    applyFilters();
+    searchInput.focus();
+  }
+
+  function selectSearchResult(id) {
+    const pt = allPoints.find(p => p.id === id);
+    if (!pt) return;
+    document.getElementById('search-results-dropdown').style.display = 'none';
+    map.setView([pt.latitude, pt.longitude], 18, { animate: true });
+    
+    // Apri il popup
+    markersClusterGroup.eachLayer(layer => {
+      if (layer.getLatLng().lat === pt.latitude && layer.getLatLng().lng === pt.longitude) {
+        layer.openPopup();
+      }
+    });
+  }
+
+  // ==========================================
+  // 8. MODALITÀ MODIFICA E MIRINO A CROCE
+  // ==========================================
+  function toggleEditMode() {
+    isEditMode = !isEditMode;
+    const toggleBtn = document.getElementById('mode-toggle-btn');
+    const addBtn = document.getElementById('btn-add-main');
+    const mapContainer = document.getElementById('map');
+
+    if (isEditMode) {
+      toggleBtn.innerHTML = '✏️ Modifica ON';
+      toggleBtn.style.background = '#dc2626';
+      addBtn.style.display = 'inline-flex';
+      mapContainer.style.cursor = 'crosshair';
+    } else {
+      toggleBtn.innerHTML = '🔒 Sola Lettura';
+      toggleBtn.style.background = '#059669';
+      addBtn.style.display = 'none';
+      mapContainer.style.cursor = '';
+      closeModal();
+    }
+    applyFilters();
+  }
+
+  map.on('click', function(e) {
+    if (!isEditMode) return;
+    openAddModal(e.latlng.lat, e.latlng.lng);
   });
 
-  if (tempMarker) map.removeLayer(tempMarker);
-  tempMarker = L.marker([lat, lng], { icon: crossIcon, draggable: true }).addTo(map);
-  tempMarker.on('dragend', (e) => {
-    const pos = e.target.getLatLng();
-    document.getElementById('input-lat').value = pos.lat;
-    document.getElementById('input-lng').value = pos.lng;
-  });
-}
+  function triggerAddAtCenter() {
+    const center = map.getCenter();
+    openAddModal(center.lat, center.lng);
+  }
 
-    window.openEditModal = function(id) {
-      const pt = allPoints.find(p => p.id === id);
-      if (!pt) return;
+  function openAddModal(lat, lng) {
+    document.getElementById('modal-title').innerText = 'Nuovo Civico';
+    document.getElementById('edit-id').value = '';
+    document.getElementById('btn-delete').style.display = 'none';
+    document.getElementById('input-lat').value = lat;
+    document.getElementById('input-lng').value = lng;
+    document.getElementById('input-address').value = '';
+    document.getElementById('input-notes').value = '';
 
-      document.getElementById('modal-title').innerText = 'Modifica Civico';
-      document.getElementById('edit-id').value = pt.id;
-      document.getElementById('btn-delete').style.display = 'inline-block';
-      document.getElementById('input-lat').value = pt.latitude;
-      document.getElementById('input-lng').value = pt.longitude;
-      document.getElementById('input-zone').value = pt.zone_id;
-      document.getElementById('input-address').value = pt.address;
-      document.getElementById('input-notes').value = pt.notes || '';
+    const currentFilter = document.getElementById('zone-filter').value;
+    if (currentFilter !== 'ALL') {
+      document.getElementById('input-zone').value = currentFilter;
+    }
 
-      document.getElementById('modal').style.display = 'block';
+    document.getElementById('modal').style.display = 'block';
+
+    // Mirino a X di precisione
+    const crossIcon = L.divIcon({
+      className: 'precision-crosshair',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+
+    if (tempMarker) map.removeLayer(tempMarker);
+    tempMarker = L.marker([lat, lng], { icon: crossIcon, draggable: true }).addTo(map);
+    tempMarker.on('dragend', (e) => {
+      const pos = e.target.getLatLng();
+      document.getElementById('input-lat').value = pos.lat;
+      document.getElementById('input-lng').value = pos.lng;
+    });
+  }
+
+  window.openEditModal = function(id) {
+    const pt = allPoints.find(p => p.id === id);
+    if (!pt) return;
+
+    document.getElementById('modal-title').innerText = 'Modifica Civico';
+    document.getElementById('edit-id').value = pt.id;
+    document.getElementById('btn-delete').style.display = 'inline-block';
+    document.getElementById('input-lat').value = pt.latitude;
+    document.getElementById('input-lng').value = pt.longitude;
+    document.getElementById('input-zone').value = pt.zone_id;
+    document.getElementById('input-address').value = pt.address;
+    document.getElementById('input-notes').value = pt.notes || '';
+
+    document.getElementById('modal').style.display = 'block';
+
+    const crossIcon = L.divIcon({
+      className: 'precision-crosshair',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+
+    if (tempMarker) map.removeLayer(tempMarker);
+    tempMarker = L.marker([pt.latitude, pt.longitude], { icon: crossIcon, draggable: true }).addTo(map);
+    tempMarker.on('dragend', (e) => {
+      const pos = e.target.getLatLng();
+      document.getElementById('input-lat').value = pos.lat;
+      document.getElementById('input-lng').value = pos.lng;
+    });
+  };
+
+  function closeModal() {
+    document.getElementById('modal').style.display = 'none';
+    if (tempMarker) {
+      map.removeLayer(tempMarker);
+      tempMarker = null;
+    }
+  }
+
+  // ==========================================
+  // 9. SALVATAGGIO ED ELIMINAZIONE SUPABASE
+  // ==========================================
+  async function savePoint() {
+    const id = document.getElementById('edit-id').value;
+    const lat = parseFloat(document.getElementById('input-lat').value);
+    const lng = parseFloat(document.getElementById('input-lng').value);
+    const zone = document.getElementById('input-zone').value;
+    const address = document.getElementById('input-address').value.trim();
+    const notes = document.getElementById('input-notes').value.trim();
+
+    if (!address) {
+      alert("Inserisci l'indirizzo e il numero civico.");
+      return;
+    }
+
+    const payload = {
+      latitude: lat,
+      longitude: lng,
+      zone_id: zone,
+      address: address,
+      notes: notes
     };
 
-    function closeModal() {
-      document.getElementById('modal').style.display = 'none';
-      if (tempMarker) map.removeLayer(tempMarker);
-    }
-
-    async function savePoint() {
-      const id = document.getElementById('edit-id').value;
-      const zone_id = document.getElementById('input-zone').value;
-      const address = document.getElementById('input-address').value.trim();
-      const notes = document.getElementById('input-notes').value.trim();
-      const latitude = parseFloat(document.getElementById('input-lat').value);
-      const longitude = parseFloat(document.getElementById('input-lng').value);
-
-      if (!address) {
-        alert("Inserisci l'indirizzo e il numero civico!");
-        return;
-      }
-
-      const payload = { zone_id, address, notes, latitude, longitude };
-      let error = null;
-
+    try {
       if (id) {
-        const res = await dbClient.from('delivery_points').update(payload).eq('id', id);
-        error = res.error;
+        const { error } = await supabaseClient.from('delivery_points').update(payload).eq('id', id);
+        if (error) throw error;
       } else {
-        const res = await dbClient.from('delivery_points').insert([payload]);
-        error = res.error;
+        const { error } = await supabaseClient.from('delivery_points').insert([payload]);
+        if (error) throw error;
       }
-
-      if (error) {
-        alert('Errore: ' + error.message);
-      } else {
-        closeModal();
-        fetchPoints();
-      }
+      closeModal();
+      await fetchDeliveryPoints();
+    } catch (err) {
+      alert("Errore durante il salvataggio: " + err.message);
     }
+  }
 
-    async function deleteCurrentPoint() {
-      const id = document.getElementById('edit-id').value;
-      if (!id) return;
-      
-      if (confirm("Vuoi eliminare definitivamente questo civico?")) {
-        const { error } = await dbClient.from('delivery_points').delete().eq('id', id);
-        if (error) {
-          alert('Errore: ' + error.message);
+  async function deletePoint() {
+    const id = document.getElementById('edit-id').value;
+    if (!id || !confirm("Vuoi davvero eliminare definitivamente questo civico?")) return;
+
+    try {
+      const { error } = await supabaseClient.from('delivery_points').delete().eq('id', id);
+      if (error) throw error;
+      closeModal();
+      await fetchDeliveryPoints();
+    } catch (err) {
+      alert("Errore durante l'eliminazione: " + err.message);
+    }
+  }
+
+  // ==========================================
+  // 10. GEOLOCALIZZAZIONE GPS IN TEMPO REALE
+  // ==========================================
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(
+      (pos) => {
+        userLatLng = [pos.coords.latitude, pos.coords.longitude];
+        if (!userMarker) {
+          userMarker = L.marker(userLatLng, {
+            icon: L.divIcon({ className: 'user-pos-marker', iconSize: [14, 14], iconAnchor: [7, 7] })
+          }).addTo(map);
         } else {
-          closeModal();
-          fetchPoints();
+          userMarker.setLatLng(userLatLng);
         }
-      }
-    }
+      },
+      (err) => console.log("Segnale GPS in attesa:", err.message),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+    );
+  }
 
-    // --- 8. MODALE GUIDA ---
-    function openHelpModal() {
-      document.getElementById('help-modal').style.display = 'flex';
+  function centerOnUserLocation() {
+    if (userLatLng) {
+      map.setView(userLatLng, 17, { animate: true });
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userLatLng = [pos.coords.latitude, pos.coords.longitude];
+          map.setView(userLatLng, 17, { animate: true });
+        },
+        () => alert("Impossibile agganciare il segnale GPS. Verifica che i permessi posizione siano attivi."),
+        { enableHighAccuracy: true }
+      );
+    } else {
+      alert("Geolocalizzazione non supportata sul browser in uso.");
     }
-    function closeHelpModal() {
-      document.getElementById('help-modal').style.display = 'none';
-    }
+  }
 
-    // Avvio
-    fetchPoints();
-  </script>
+  // ==========================================
+  // 11. REGISTRAZIONE SERVICE WORKER & AVVIO
+  // ==========================================
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  // Avvio iniziale
+  fetchDeliveryPoints();
+</script>
 </body>
 </html>
