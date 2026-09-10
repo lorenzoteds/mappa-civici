@@ -549,9 +549,10 @@
   }
 
   function buildPopupHTML(pt) {
-    const lat = pt.latitude;
-    const lng = pt.longitude;
+    const lat = pt.latitude || pt.lat;
+    const lng = pt.longitude || pt.lng;
     const label = encodeURIComponent(pt.address || 'Civico');
+    const pointZone = getPointZone(pt) || 'N/D';
 
     const gMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
     const appleUrl = `maps://maps.apple.com/?daddr=${lat},${lng}&q=${label}`;
@@ -559,8 +560,11 @@
 
     return `
       <div style="font-size:13px; line-height:1.4; min-width:185px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <span style="background:${getZoneColor(pointZone)}; color:white; font-size:11px; font-weight:700; padding:2px 6px; border-radius:4px;">${pointZone}</span>
+        </div>
         <div style="font-weight:700; color:#1e293b; font-size:14px; margin-bottom:2px;">${pt.address}</div>
-        <div style="color:#475569; font-size:12px; margin-bottom:6px;">${pt.notes || '<i>Nessuna nota presente</i>'}</div>
+        <div style="color:#475569; font-size:12px; margin-bottom:8px;">${pt.notes || '<i>Nessuna nota presente</i>'}</div>
         <div style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Naviga con:</div>
         <div style="display:flex; gap:4px;">
           <a href="${gMapsUrl}" target="_blank" style="flex:1; text-align:center; background:#2563eb; color:white; padding:6px 2px; border-radius:4px; text-decoration:none; font-size:11px; font-weight:600;">Google</a>
