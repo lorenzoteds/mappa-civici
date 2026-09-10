@@ -507,19 +507,15 @@
   function applyFilters() {
     const selectedZone = document.getElementById('zone-filter').value;
     const query = document.getElementById('search-input').value.toLowerCase().trim();
-
-    // Estrae solo il numero dalla selezione (es. "ZONA 3" -> "3")
     const selectedNum = selectedZone !== 'ALL' ? selectedZone.replace(/\D/g, '') : null;
 
     const filtered = allPoints.filter(pt => {
-      // Normalizza il valore presente nel database
-      const dbZoneStr = String(pt.zone_id || '').trim();
-      const dbZoneNum = dbZoneStr.replace(/\D/g, '');
+      const zoneValue = String(getPointZone(pt)).trim();
+      const zoneNum = zoneValue.replace(/\D/g, '');
 
-      // Fa match sia per stringa esatta ("ZONA 1"), sia per solo numero ("1")
       const matchZone = (selectedZone === 'ALL') || 
-                        (dbZoneStr.toUpperCase() === selectedZone.toUpperCase()) || 
-                        (selectedNum && dbZoneNum === selectedNum);
+                        (zoneValue.toUpperCase() === selectedZone.toUpperCase()) || 
+                        (selectedNum && zoneNum === selectedNum);
 
       const matchSearch = !query || 
         (pt.address && pt.address.toLowerCase().includes(query)) ||
@@ -622,7 +618,10 @@
     applyFilters();
     searchInput.focus();
   }
-
+// Funzione che trova il valore della zona indipendentemente da come si chiama la colonna nel DB
+  function getPointZone(pt) {
+    return pt.zone_id || pt.zona || pt.zone || pt.settore || pt.linea || '';
+  }
   function selectSearchResult(id) {
     const pt = allPoints.find(p => p.id === id);
     if (!pt) return;
