@@ -508,11 +508,23 @@
     const selectedZone = document.getElementById('zone-filter').value;
     const query = document.getElementById('search-input').value.toLowerCase().trim();
 
+    // Estrae solo il numero dalla selezione (es. "ZONA 3" -> "3")
+    const selectedNum = selectedZone !== 'ALL' ? selectedZone.replace(/\D/g, '') : null;
+
     const filtered = allPoints.filter(pt => {
-      const matchZone = (selectedZone === 'ALL' || pt.zone_id === selectedZone);
+      // Normalizza il valore presente nel database
+      const dbZoneStr = String(pt.zone_id || '').trim();
+      const dbZoneNum = dbZoneStr.replace(/\D/g, '');
+
+      // Fa match sia per stringa esatta ("ZONA 1"), sia per solo numero ("1")
+      const matchZone = (selectedZone === 'ALL') || 
+                        (dbZoneStr.toUpperCase() === selectedZone.toUpperCase()) || 
+                        (selectedNum && dbZoneNum === selectedNum);
+
       const matchSearch = !query || 
         (pt.address && pt.address.toLowerCase().includes(query)) ||
         (pt.notes && pt.notes.toLowerCase().includes(query));
+
       return matchZone && matchSearch;
     });
 
