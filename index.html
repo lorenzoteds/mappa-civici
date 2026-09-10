@@ -530,17 +530,23 @@
   function applyFilters() {
     const selectedZone = document.getElementById('zone-filter').value;
     const query = document.getElementById('search-input').value.toLowerCase().trim();
-    const selectedNum = selectedZone !== 'ALL' ? selectedZone.replace(/\D/g, '') : null;
+    
+    // Estrae il numero intero della zona selezionata (es. "ZONA 1" -> 1)
+    const targetZoneNum = selectedZone !== 'ALL' ? parseInt(selectedZone.replace(/\D/g, ''), 10) : null;
 
     const filtered = allPoints.filter(pt => {
-      const zoneValue = String(getPointZone(pt)).trim();
-      const zoneNum = zoneValue.replace(/\D/g, '');
+      // 1. Gestione Zona
+      let matchZone = (selectedZone === 'ALL');
+      if (!matchZone) {
+        const rawZone = String(getPointZone(pt) || '').trim();
+        const ptZoneNum = parseInt(rawZone.replace(/\D/g, ''), 10);
 
-      // Match sia con stringa esatta ("ZONA 1") sia con solo numero ("1")
-      const matchZone = (selectedZone === 'ALL') || 
-                        (zoneValue.toUpperCase() === selectedZone.toUpperCase()) || 
-                        (selectedNum && zoneNum === selectedNum);
+        // Match sia per numero puro (es. 1 === 1), sia per testo ("ZONA 1" === "ZONA 1")
+        matchZone = (!isNaN(targetZoneNum) && ptZoneNum === targetZoneNum) ||
+                    (rawZone.toUpperCase() === selectedZone.toUpperCase());
+      }
 
+      // 2. Gestione Ricerca testo
       const addressStr = (pt.address || '').toLowerCase();
       const notesStr = (pt.notes || '').toLowerCase();
       const matchSearch = !query || addressStr.includes(query) || notesStr.includes(query);
@@ -549,6 +555,16 @@
     });
 
     renderMarkers(filtered);
+
+    // AUTO-ZOOM SULLA ZONA: Inquadra automaticamente tutti i punti filtrati!
+    if (selectedZone !== 'ALL' && filtered.length > 0) {
+      const bounds = L.latLngBounds(filtered.map(pt => [
+        parseFloat(pt.latitude || pt.lat),
+        parseFloat(pt.longitude || pt.lng)
+      ]));
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+    }
+
     return filtered;
   }
 
