@@ -372,8 +372,9 @@
   // 1. CONFIGURAZIONE SUPABASE
   // ==========================================
   const SUPABASE_URL = 'https://lheeuxozbzqkqunhrbwu.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_IKNBY7RJLOYZaesStMeuXw_L3mkEs8Q';
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_ANON_KEY= 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoZWV1eG96Ynpxa3F1bmhyYnd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMTczMTYsImV4cCI6MjEwMzU5MzMxNn0.PLN4BSLnxPhv5lQFUzhijBgMCRYBu7fKp7wdJsHW9sE';
+    const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 
   // ==========================================
   // 2. STATO APPLICAZIONE
