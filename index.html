@@ -75,28 +75,29 @@
       gap: 6px;
     }
 
-   .author-tag {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  padding: 3px 8px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+    .author-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
 
-.author-tag:hover, .author-tag:active {
-  background: #0a66c2; /* Colore blu LinkedIn */
-  border-color: #ffffff;
-  transform: scale(1.05);
-}
+    .author-tag:hover, .author-tag:active {
+      background: #0a66c2;
+      border-color: #ffffff;
+      transform: scale(1.05);
+    }
+
     .top-actions {
       display: flex;
       gap: 6px;
@@ -175,7 +176,6 @@
       z-index: 1;
     }
 
-    /* Banner modalità modifica */
     #edit-banner {
       display: none;
       position: absolute;
@@ -208,7 +208,6 @@
       cursor: pointer;
     }
 
-    /* Loading overlay */
     #loading-overlay {
       display: none;
       position: absolute;
@@ -238,7 +237,6 @@
       font-weight: 600;
     }
 
-    /* Toast */
     #toast-container {
       position: fixed;
       bottom: 24px;
@@ -272,7 +270,6 @@
     .toast.error { background: #dc2626; }
     .toast.info { background: #2563eb; }
 
-    /* Mirino Modifica */
     .precision-crosshair {
       width: 24px;
       height: 24px;
@@ -298,7 +295,6 @@
       height: 24px;
     }
 
-    /* Posizione GPS */
     .user-pos-marker {
       width: 14px;
       height: 14px;
@@ -308,7 +304,6 @@
       box-shadow: 0 0 8px rgba(37, 99, 235, 0.8);
     }
 
-    /* Cluster custom */
     .marker-cluster-small,
     .marker-cluster-medium,
     .marker-cluster-large {
@@ -322,7 +317,6 @@
       font-weight: 700;
     }
 
-    /* Modal */
     #modal {
       display: none;
       position: fixed;
@@ -393,7 +387,6 @@
       margin-top: 4px;
     }
 
-    /* GPS indicator */
     #gps-indicator {
       position: absolute;
       bottom: 18px;
@@ -429,7 +422,7 @@
 
 <div id="app-container">
   <header>
-<div class="top-row">
+    <div class="top-row">
       <div class="app-title">
         <span>📦 Mappa Civici</span>
         <a href="https://www.linkedin.com/in/lorenzo-tedesco-74840510/" 
@@ -638,13 +631,14 @@
     document.getElementById('loading-overlay').classList.toggle('visible', visible);
   }
 
-  // 6. CARICAMENTO DATI
+  // 6. CARICAMENTO DATI (CON RANGE AMPLIATO FINO A 5.000 CIVICI)
   async function fetchDeliveryPoints() {
     setLoading(true);
     try {
       const { data, error } = await supabaseClient
         .from('delivery_points')
-        .select('*');
+        .select('*')
+        .range(0, 4999);
 
       if (error) throw error;
 
@@ -1070,7 +1064,7 @@
   }
 </script>
 
- <!-- Micro Credit con Link LinkedIn -->
+<!-- Micro Credit con Link LinkedIn -->
 <a href="https://www.linkedin.com/in/lorenzo-tedesco-74840510" 
    target="_blank" 
    rel="noopener noreferrer" 
@@ -1078,6 +1072,5 @@
   <span>⚡ Dev: Lorenzo Tedesco</span>
   <span style="color: #38bdf8; font-size: 10px;">↗</span>
 </a>
-</div>
 </body>
 </html>
