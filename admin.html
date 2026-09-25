@@ -28,6 +28,7 @@
     .btn-blue { background: #2563eb; color: white; }
     .btn-emerald { background: #059669; color: white; }
     .btn-amber { background: #d97706; color: white; }
+    .btn-purple { background: #7c3aed; color: white; }
     .btn-red { background: #dc2626; color: white; }
 
     table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
@@ -36,7 +37,7 @@
     .text-right { text-align: right; }
     .tag-warn { background: #7c2d12; color: #fdba74; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 11px; }
 
-    #log-box { background: #020617; border: 1px solid #1e293b; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 12px; color: #a5f3fc; height: 120px; overflow-y: auto; white-space: pre-wrap; }
+    #log-box { background: #020617; border: 1px solid #1e293b; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 12px; color: #a5f3fc; height: 130px; overflow-y: auto; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -73,7 +74,8 @@
 
     <!-- Manutenzione & Restore -->
     <div class="card">
-      <h2>Manutenzione & Ripristino</h2>
+      <h2>Manutenzione Dati</h2>
+      <button class="btn btn-purple" onclick="normalizeAllZones()">✨ Normalizza Formato Zone (es. z03 → ZONA 3)</button>
       <label class="btn btn-amber" style="margin-bottom:8px; cursor:pointer;">
         📥 Ripristina da file JSON
         <input type="file" id="file-restore" accept=".json" style="display:none;" onchange="importJSON(event)" />
@@ -124,20 +126,36 @@
     return pt.zone_id || pt.zona || pt.zone || pt.settore || 'SENZA ZONA';
   }
 
-  // 1. CARICAMENTO STATISTICHE
+  // 1. CARICAMENTO STATISTICHE COMPLETO CON PAGINAZIONE
   async function loadData() {
     log("Interrogazione database in corso...");
     try {
-      const { data, error } = await supabaseClient
-        .from('delivery_points')
-        .select('*')
-        .order('id', { ascending: true });
+      let allRows = [];
+      let from = 0;
+      const step = 1000;
+      let hasMore = true;
 
-      if (error) throw error;
-      cachedPoints = data || [];
+      while (hasMore) {
+        const { data, error } = await supabaseClient
+          .from('delivery_points')
+          .select('*')
+          .range(from, from + step - 1)
+          .order('id', { ascending: true });
 
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          allRows = allRows.concat(data);
+          from += step;
+          if (data.length < step) hasMore = false;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      cachedPoints = allRows;
       document.getElementById('stat-total').textContent = cachedPoints.length;
-      log(`Scaricati con successo ${cachedPoints.length} civici.`);
+      log(`Scaricati con successo TUTTI i ${cachedPoints.length} civici.`);
 
       checkIntegrity();
       renderZoneBreakdown();
@@ -147,7 +165,50 @@
     }
   }
 
-  // 2. CONTROLLO ERRORI / ANOMALIE
+  // 2. NORMALIZZAZIONE AUTOMATICA FORMATO ZONE
+  async function normalizeAllZones() {
+    if (cachedPoints.length === 0) return alert("Nessun punto caricato.");
+
+    const toUpdate = [];
+    cachedPoints.forEach(pt => {
+      const current = String(getZone(pt)).trim();
+      const num = parseInt(current.replace(/\D/g, ''), 10);
+      if (!isNaN(num) && num >= 1 && num <= 22) {
+        const standard = `ZONA ${num}`;
+        if (current !== standard) {
+          toUpdate.push({ id: pt.id, oldZone: current, newZone: standard });
+        }
+      }
+    });
+
+    if (toUpdate.length === 0) {
+      log("Tutti i civici hanno già un nome zona conforme standard.");
+      alert("Tutti i record sono già conformi (es. ZONA 1, ZONA 2, ecc.)!");
+      return;
+    }
+
+    if (!confirm(`Trovati ${toUpdate.length} record con nome zona non uniforme (es. z03 o Z3).\nVuoi aggiornarli automaticamente su Supabase in 'ZONA X'?`)) {
+      return;
+    }
+
+    log(`Inizio normalizzazione di ${toUpdate.length} record...`);
+    let countSuccess = 0;
+
+    for (const item of toUpdate) {
+      const { error } = await supabaseClient
+        .from('delivery_points')
+        .update({ zone_id: item.newZone })
+        .eq('id', item.id);
+
+      if (!error) countSuccess++;
+    }
+
+    log(`✅ Aggiornati con successo ${countSuccess} su ${toUpdate.length} record.`);
+    alert(`Aggiornati ${countSuccess} civici allo standard ZONA X!`);
+    await loadData();
+  }
+
+  // 3. CONTROLLO ERRORI / ANOMALIE
   function checkIntegrity() {
     let anomalies = 0;
     cachedPoints.forEach(p => {
@@ -172,7 +233,7 @@
     }
   }
 
-  // 3. TABELLA ZONE
+  // 4. TABELLA ZONE
   function renderZoneBreakdown() {
     const counts = {};
     cachedPoints.forEach(p => {
@@ -201,7 +262,7 @@
     }).join('');
   }
 
-  // 4. ESPORTAZIONE JSON
+  // 5. ESPORTAZIONE JSON
   function exportJSON() {
     if (cachedPoints.length === 0) return alert("Nessun dato da esportare.");
     const dateStr = new Date().toISOString().slice(0, 10);
@@ -215,7 +276,7 @@
     log(`Backup JSON scaricato (${cachedPoints.length} record).`);
   }
 
-  // 5. ESPORTAZIONE CSV
+  // 6. ESPORTAZIONE CSV
   function exportCSV() {
     if (cachedPoints.length === 0) return alert("Nessun dato da esportare.");
     const dateStr = new Date().toISOString().slice(0, 10);
@@ -241,7 +302,7 @@
     log(`Foglio CSV scaricato.`);
   }
 
-  // 6. RIPRISTINO DA JSON (Upload)
+  // 7. RIPRISTINO DA JSON (Upload)
   async function importJSON(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -259,7 +320,6 @@
 
         log(`Preparazione inserimento di ${imported.length} record...`);
         
-        // Pulisce i payload per Supabase
         const cleanPayloads = imported.map(p => ({
           zone_id: getZone(p),
           address: p.address,
@@ -283,7 +343,7 @@
     event.target.value = '';
   }
 
-  // 7. PULIZIA CACHE
+  // 8. PULIZIA CACHE
   function clearClientCache() {
     localStorage.removeItem('cached_delivery_points');
     localStorage.removeItem('cached_points_timestamp');
