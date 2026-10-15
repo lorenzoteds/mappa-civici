@@ -298,7 +298,7 @@
     .user-pos-marker {
       width: 14px;
       height: 14px;
-      background-color: #f000fc;
+      background-color: #2563eb;
       border-radius: 50%;
       border: 2px solid #ffffff;
       box-shadow: 0 0 8px rgba(37, 99, 235, 0.8);
@@ -387,12 +387,14 @@
       margin-top: 4px;
     }
 
+    /* GPS indicator */
     #gps-indicator {
-      position: absolute;
-      bottom: 18px;
-      right: 12px;
-      z-index: 900;
-      background: rgba(15,23,42,0.8);
+      position: fixed;
+      bottom: 84px;
+      right: 16px;
+      z-index: 1999;
+      background: rgba(15,23,42,0.85);
+      backdrop-filter: blur(4px);
       color: #94a3b8;
       font-size: 11px;
       font-weight: 600;
@@ -402,6 +404,7 @@
       align-items: center;
       gap: 5px;
       pointer-events: none;
+      border: 1px solid rgba(255,255,255,0.1);
     }
     #gps-indicator.active {
       color: #4ade80;
@@ -416,6 +419,33 @@
       background: #4ade80;
       box-shadow: 0 0 6px #4ade80;
     }
+
+    /* Pulsante Fluttuante Centra GPS */
+    .btn-locate-fab {
+      position: fixed;
+      bottom: 24px;
+      right: 16px;
+      width: 50px;
+      height: 50px;
+      background-color: #ffffff;
+      color: #1e3a8a;
+      border-radius: 50%;
+      border: 2px solid #cbd5e1;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 2000;
+      pointer-events: auto;
+      transition: transform 0.1s ease, background-color 0.15s ease;
+      user-select: none;
+    }
+    .btn-locate-fab:active {
+      transform: scale(0.92);
+      background-color: #e2e8f0;
+    }
   </style>
 </head>
 <body>
@@ -429,7 +459,6 @@
            target="_blank" 
            rel="noopener noreferrer" 
            class="author-tag" 
-           style="cursor: pointer; text-decoration: none;"
            title="Lorenzo Tedesco su LinkedIn">
           by LT ↗
         </a>
@@ -446,7 +475,7 @@
       </select>
       
       <div style="flex:1; position:relative;">
-        <input type="text" id="search-input" style="padding-right: 32px;" placeholder="🔍 Cerca via, civico, note..." oninput="handleLiveSearch()" autocomplete="off" />
+        <input type="text" id="search-input" style="padding-right: 32px;" placeholder="🔍 Cerca via, civico, note..." oninput="handleDebouncedSearch()" autocomplete="off" />
         <button id="clear-search-btn" onclick="clearSearch()" title="Cancella">✕</button>
         <div id="search-results-dropdown"></div>
       </div>
@@ -466,13 +495,14 @@
     <div class="spinner"></div>
     <div class="loading-text">Caricamento punti…</div>
   </div>
-
-  <!-- GPS indicator -->
-  <div id="gps-indicator">
-    <div id="gps-dot"></div>
-    <span id="gps-text">GPS…</span>
-  </div>
 </div>
+
+<!-- Controlli GPS Fluttuanti (Svincolati dalla mappa) -->
+<div id="gps-indicator">
+  <div id="gps-dot"></div>
+  <span id="gps-text">GPS…</span>
+</div>
+<button type="button" class="btn-locate-fab" onclick="centerOnUserLocation()" title="Centra sulla mia posizione">🎯</button>
 
 <!-- Finestra Modale -->
 <div id="modal">
@@ -524,6 +554,7 @@
   let tempMarker = null;
   let userLatLng = null;
   let userMarker = null;
+  let searchDebounceTimer = null;
 
   const ZONES = Array.from({ length: 22 }, (_, i) => `ZONA ${i + 1}`);
   const ZONE_COLORS = [
@@ -558,7 +589,7 @@
     inputZone.innerHTML += `<option value="${z}">${z}</option>`;
   });
 
-  // 3. MAPPA E LIVELLI (IBRIDO)
+  // 3. MAPPA E LIVELLI (Stradale di default)
   const map = L.map('map', {
     center: [46.1689, 9.8715],
     zoom: 13,
@@ -595,7 +626,6 @@
 
   const hybridGroup = L.layerGroup([satelliteBase, roadLinesOverlay, textLabelsOverlay]);
 
-  // Imposta Stradale di default all'avvio
   streetLayer.addTo(map);
 
   const baseMaps = {
@@ -605,13 +635,13 @@
   };
   L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
-  // Marker Cluster Group
+  // Cluster ottimizzato per consegne
   const markersLayer = L.markerClusterGroup({
-    maxClusterRadius: 50,
+    maxClusterRadius: 38,
     spiderfyOnMaxZoom: true,
     showCoverageOnHover: false,
     zoomToBoundsOnClick: true,
-    disableClusteringAtZoom: 18
+    disableClusteringAtZoom: 17
   });
   map.addLayer(markersLayer);
 
@@ -634,7 +664,7 @@
     document.getElementById('loading-overlay').classList.toggle('visible', visible);
   }
 
-  // 6. CARICAMENTO DATI (Paginazione automatica illimitata)
+  // 6. CARICAMENTO DATI (Paginazione illimitata + Cache Offline)
   async function fetchDeliveryPoints() {
     setLoading(true);
     try {
@@ -655,24 +685,30 @@
         if (data && data.length > 0) {
           allRows = allRows.concat(data);
           from += step;
-          if (data.length < step) {
-            hasMore = false;
-          }
+          if (data.length < step) hasMore = false;
         } else {
           hasMore = false;
         }
       }
 
       allPoints = allRows;
-      console.log(`Punti totali caricati con successo: ${allPoints.length}`);
+      localStorage.setItem('cached_delivery_points', JSON.stringify(allRows));
       applyFilters();
     } catch (err) {
-      console.warn("Errore caricamento punti:", err);
-      showToast("Errore nel caricamento dei punti", "error");
+      console.warn("Connessione fallita, fallback su cache locale:", err);
+      const cached = localStorage.getItem('cached_delivery_points');
+      if (cached) {
+        allPoints = JSON.parse(cached);
+        showToast("Modalità offline attiva", "info");
+        applyFilters();
+      } else {
+        showToast("Errore caricamento punti", "error");
+      }
     } finally {
       setLoading(false);
     }
   }
+
   // 7. FILTRI E POPUP
   function applyFilters() {
     const selectedZone = document.getElementById('zone-filter').value;
@@ -814,8 +850,15 @@
     document.body.removeChild(ta);
   }
 
-  // 8. RICERCA
-  function handleLiveSearch() {
+  // 8. RICERCA CON DEBOUNCE (200ms)
+  function handleDebouncedSearch() {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      executeLiveSearch();
+    }, 200);
+  }
+
+  function executeLiveSearch() {
     const query = document.getElementById('search-input').value.toLowerCase().trim();
     const dropdown = document.getElementById('search-results-dropdown');
     const clearBtn = document.getElementById('clear-search-btn');
@@ -1037,7 +1080,7 @@
     }
   }
 
-  // 11. GEOLOCALIZZAZIONE
+  // 11. GEOLOCALIZZAZIONE & CENTRATURA GPS
   if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
       (pos) => {
@@ -1065,6 +1108,23 @@
     document.getElementById('gps-text').textContent = 'GPS n/d';
   }
 
+  function centerOnUserLocation() {
+    if (userLatLng) {
+      map.setView(userLatLng, 17, { animate: true });
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userLatLng = [pos.coords.latitude, pos.coords.longitude];
+          map.setView(userLatLng, 17, { animate: true });
+        },
+        () => showToast("Posizione GPS non disponibile", "error"),
+        { enableHighAccuracy: true, timeout: 6000 }
+      );
+    } else {
+      showToast("Geolocalizzazione non supportata", "error");
+    }
+  }
+
   // Chiudi dropdown ricerca al click fuori
   document.addEventListener('click', (e) => {
     const dropdown = document.getElementById('search-results-dropdown');
@@ -1088,7 +1148,7 @@
    target="_blank" 
    rel="noopener noreferrer" 
    style="position: fixed; bottom: 12px; left: 10px; z-index: 2000; pointer-events: auto; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); color: #f8fafc; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; text-decoration: none; border: 1px solid rgba(255, 255, 255, 0.2); display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.35); cursor: pointer;">
-  <span>⚡ Dev: Lorenzo Tedesco</span>
+  <span>⚡ Dev:Lo.Tede</span>
   <span style="color: #38bdf8; font-size: 10px;">↗</span>
 </a>
 </body>
