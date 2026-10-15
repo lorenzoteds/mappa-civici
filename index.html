@@ -631,21 +631,38 @@
     document.getElementById('loading-overlay').classList.toggle('visible', visible);
   }
 
-  // 6. CARICAMENTO DATI (CON RANGE AMPLIATO FINO A 5.000 CIVICI)
+  // 6. CARICAMENTO DATI (Paginazione automatica illimitata)
   async function fetchDeliveryPoints() {
     setLoading(true);
     try {
-      const { data, error } = await supabaseClient
-        .from('delivery_points')
-        .select('*')
-        .range(0, 4999);
+      let allRows = [];
+      let from = 0;
+      const step = 1000;
+      let hasMore = true;
 
-      if (error) throw error;
+      while (hasMore) {
+        const { data, error } = await supabaseClient
+          .from('delivery_points')
+          .select('*')
+          .range(from, from + step - 1)
+          .order('id', { ascending: true });
 
-      if (data) {
-        allPoints = data;
-        applyFilters();
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          allRows = allRows.concat(data);
+          from += step;
+          if (data.length < step) {
+            hasMore = false;
+          }
+        } else {
+          hasMore = false;
+        }
       }
+
+      allPoints = allRows;
+      console.log(`Punti totali caricati con successo: ${allPoints.length}`);
+      applyFilters();
     } catch (err) {
       console.warn("Errore caricamento punti:", err);
       showToast("Errore nel caricamento dei punti", "error");
@@ -653,7 +670,6 @@
       setLoading(false);
     }
   }
-
   // 7. FILTRI E POPUP
   function applyFilters() {
     const selectedZone = document.getElementById('zone-filter').value;
