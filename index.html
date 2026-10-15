@@ -593,11 +593,14 @@
     pane: 'hybridOverlayPane'
   });
 
-  const hybridGroup = L.layerGroup([satelliteBase, roadLinesOverlay, textLabelsOverlay]).addTo(map);
+  const hybridGroup = L.layerGroup([satelliteBase, roadLinesOverlay, textLabelsOverlay]);
+
+  // Imposta Stradale di default all'avvio
+  streetLayer.addTo(map);
 
   const baseMaps = {
-    "🛰️ Ibrido": hybridGroup,
     "🗺️ Stradale": streetLayer,
+    "🛰️ Ibrido": hybridGroup,
     "📷 Satellite": satelliteBase
   };
   L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
