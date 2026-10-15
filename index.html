@@ -304,17 +304,32 @@
       box-shadow: 0 0 8px rgba(37, 99, 235, 0.8);
     }
 
-    .marker-cluster-small,
-    .marker-cluster-medium,
-    .marker-cluster-large {
-      background-color: rgba(30, 58, 138, 0.55);
+    /* Stile Cluster Personalizzato e Dinamico per Zona */
+    .dynamic-cluster-marker {
+      background: transparent;
+      border: none;
     }
-    .marker-cluster-small div,
-    .marker-cluster-medium div,
-    .marker-cluster-large div {
-      background-color: rgba(30, 58, 138, 0.85);
-      color: white;
+    .cluster-outer-ring {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+      transition: transform 0.15s ease;
+    }
+    .cluster-inner-core {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      color: #ffffff;
       font-weight: 700;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #ffffff;
     }
 
     #modal {
@@ -387,7 +402,7 @@
       margin-top: 4px;
     }
 
-    /* GPS indicator */
+    /* Controlli Fluttuanti GPS */
     #gps-indicator {
       position: fixed;
       bottom: 84px;
@@ -420,7 +435,6 @@
       box-shadow: 0 0 6px #4ade80;
     }
 
-    /* Pulsante Fluttuante Centra GPS */
     .btn-locate-fab {
       position: fixed;
       bottom: 24px;
@@ -497,7 +511,7 @@
   </div>
 </div>
 
-<!-- Controlli GPS Fluttuanti (Svincolati dalla mappa) -->
+<!-- Controlli GPS Fluttuanti -->
 <div id="gps-indicator">
   <div id="gps-dot"></div>
   <span id="gps-text">GPS…</span>
@@ -635,13 +649,44 @@
   };
   L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
-  // Cluster ottimizzato per consegne
+  // Cluster Dinamico per Zona
   const markersLayer = L.markerClusterGroup({
     maxClusterRadius: 38,
     spiderfyOnMaxZoom: true,
     showCoverageOnHover: false,
     zoomToBoundsOnClick: true,
-    disableClusteringAtZoom: 17
+    disableClusteringAtZoom: 17,
+    iconCreateFunction: function (cluster) {
+      const markers = cluster.getAllChildMarkers();
+      const count = cluster.getChildCount();
+      
+      const zonesSet = new Set();
+      markers.forEach(m => {
+        if (m.options && m.options.zoneName) {
+          zonesSet.add(m.options.zoneName);
+        }
+      });
+
+      // Se tutti appartengono alla stessa zona, usa quel colore, altrimenti blu scuro
+      let clusterColor = '#1e3a8a';
+      if (zonesSet.size === 1) {
+        const singleZone = zonesSet.values().next().value;
+        clusterColor = getZoneColor(singleZone);
+      }
+
+      return L.divIcon({
+        html: `
+          <div class="cluster-outer-ring" style="background-color: ${clusterColor}66;">
+            <div class="cluster-inner-core" style="background-color: ${clusterColor};">
+              ${count}
+            </div>
+          </div>
+        `,
+        className: 'dynamic-cluster-marker',
+        iconSize: L.point(38, 38),
+        iconAnchor: [19, 19]
+      });
+    }
   });
   map.addLayer(markersLayer);
 
@@ -770,7 +815,8 @@
         color: '#ffffff',
         weight: 2,
         opacity: 1,
-        fillOpacity: 0.95
+        fillOpacity: 0.95,
+        zoneName: zoneStr // Passa la zona al cluster
       });
 
       marker.bindPopup(() => buildPopupHTML(pt, lat, lng, zoneStr), {
@@ -1148,7 +1194,7 @@
    target="_blank" 
    rel="noopener noreferrer" 
    style="position: fixed; bottom: 12px; left: 10px; z-index: 2000; pointer-events: auto; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); color: #f8fafc; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; text-decoration: none; border: 1px solid rgba(255, 255, 255, 0.2); display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.35); cursor: pointer;">
-  <span>⚡ Dev:Lo.Tede</span>
+  <span>⚡ Dev: Lorenzo Tedesco</span>
   <span style="color: #38bdf8; font-size: 10px;">↗</span>
 </a>
 </body>
